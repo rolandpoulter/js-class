@@ -1,0 +1,14 @@
+{
+	"name": "clss",
+	"main": "./class.js",
+	"author": "rolandpoulter",
+	"version": "0.0.1",
+	"keywords": [],
+	"homepage": "https://github.com/rolandpoulter/js-class",
+	"repository": {"type": "git", "url": "git://github.com/rolandpoulter/js-class"},
+	"description" : "",
+	"contributors": [],
+	"dependencies": {},
+	"devDependencies": {"spc": ">= 0.0.1"},
+	"scripts": {"test": "node ./test.js"}
+}
