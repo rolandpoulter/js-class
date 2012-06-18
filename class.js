@@ -10,29 +10,30 @@ function namedFunc (_name, _src) {
 
 var slice = Array.prototype.slice;
 
-function new_ (obj) {
-	if (Object.create) return Object.create(obj);
+var util = {
+	new_: function (obj) {
+		if (Object.create) return Object.create(obj);
 
-	function X () {} X.prototype = obj; return new X();
-}
+		function X () {} X.prototype = obj; return new X();
+	},
 
-function isFunc (fn) {
-	return typeof fn === 'function';
-}
+	isFunc: function (func) {
+		return typeof func === 'function';
+	},
 
-function isArray (a) {
-	return Array.isArray ? Array.isArray(a) : a instanceof Array;
-}
+	isArray: Array.isArray || function (array) {
+		return array instanceof Array;
+	},
 
-clss.util = {
-	new_: new_,
-	isFunc: isFunc,
-	isArray: isArray,
-	includer: includer,
 	namedFunc: namedFunc,
+
+	includer: includer,
+
 	newClss: newClss,
 	newInit: newInit
 };
+
+clss.util = util;
 
 clss.toString = toString;
 
@@ -45,7 +46,7 @@ module.exports = clss;
 function clss (name, main, supr) {
 	main = main || name;
 
-	if (!isFunc(main)) throw new Error('Invalid class: missing function.');
+	if (!util.isFunc(main)) throw new Error('Invalid class: missing function.');
 
 	if (typeof name !== 'string') {
 		if (name && typeof name.name === 'string') name = name.name;
@@ -54,8 +55,8 @@ function clss (name, main, supr) {
 
 	} else name = name.replace(/[^A-Za-z0-9$_\-]/g, '_');
 
-	var that = typeof this !== 'undefined' ? this : null,
-	    self = newClss(name),
+	var that = util.isFunc(this) ? this : null,
+	    self = util.newClss(name),
 	    initN = 'init' + name,
 	    self_,
 	    suprP,
@@ -64,14 +65,14 @@ function clss (name, main, supr) {
 
 	supr = supr ? supr : (that !== clss ? that : null);
 
-	if (isFunc(supr)) {
+	if (util.isFunc(supr)) {
 		suprP = supr.prototype;
 		self.supr = supr;
 	}
 
 	self_ = self._ = function () {return this;};
 
-	proto = self.prototype = self_.prototype = suprP ? new_(suprP) : {};
+	proto = self.prototype = self_.prototype = suprP ? util.new_(suprP) : {};
 
 	proto.constructor = self.self = self;
 
@@ -82,7 +83,7 @@ function clss (name, main, supr) {
 	};
 
 	include = function () {
-		includer(this.prototype, slice.call(arguments, 0));
+		util.includer(this.prototype, slice.call(arguments, 0));
 
 		return this;
 	};
@@ -95,11 +96,11 @@ function clss (name, main, supr) {
 			    args = [obj, proto, name, initN],
 			    init;
 
-			if (isFunc(supr)) args.splice(1, 0, suprP, supr);
+			if (util.isFunc(supr)) args.splice(1, 0, suprP, supr);
 
-			if (derived(supr) && !supr.derived(obj)) supr.create(obj);
+			if (clss.derived(supr) && !supr.derived(obj)) supr.create(obj);
 
-			if (isFunc(main)) {
+			if (util.isFunc(main)) {
 				init = obj.init;
 
 				this.include = function () {
@@ -129,7 +130,7 @@ function clss (name, main, supr) {
 			}
 		}
 
-		return isArray(args_) ? obj[initN].apply(obj, args_) : (
+		return util.isArray(args_) ? obj[initN].apply(obj, args_) : (
 			args_ === true ? obj[initN].call(obj) : obj);
 	};
 
@@ -147,7 +148,7 @@ function toString () {
 }
 
 function derived (klss) {
-	return isFunc(klss) && klss.clss === clss;
+	return util.isFunc(klss) && klss.clss === clss;
 }
 
 function includer (obj, list) {
