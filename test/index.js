@@ -1,5 +1,5 @@
-module.exports = require('spc').describe('class', function () {
-	var clss = require('./class');
+module.exports = require('spc').describe('clss', function () {
+	var clss = require('../class');
 
 	before(function () {
 		should();
@@ -15,7 +15,7 @@ module.exports = require('spc').describe('class', function () {
 				def.init = that.initMethod;
 			});
 
-			this.subject = clss('TestClass', this.block);
+			this.subject = clss.create('TestClass', this.block);
 		});
 
 		it('should call the block', function () {

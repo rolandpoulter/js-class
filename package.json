@@ -9,6 +9,5 @@
 	"description" : "",
 	"contributors": [],
 	"dependencies": {},
-	"devDependencies": {"spc": ">= 0.0.1"},
-	"scripts": {"test": "node ./test.js"}
+	"scripts": {"test": "node ./test"}
 }

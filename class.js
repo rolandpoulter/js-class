@@ -1,175 +1,171 @@
-/*jslint smarttabs:true*/
-
-function namedFunc (_name, _src) {
-	var _exec = eval;
-
-	return _exec('(function ' + _name + '(){' + _src + '})');
+function namedFunction (name, src, args) {
+	return (('indirect', eval)('(function ' + (name || '') + ' (' + (args || '') + ') {' + src + '})'));
 }
 
 "use strict";
 
-var slice = Array.prototype.slice;
-
-var util = {
-	new_: function (obj) {
-		if (Object.create) return Object.create(obj);
-
-		function X () {} X.prototype = obj; return new X();
-	},
-
-	isFunc: function (func) {
-		return typeof func === 'function';
-	},
-
-	isArray: Array.isArray || function (array) {
-		return array instanceof Array;
-	},
-
-	namedFunc: namedFunc,
-
-	includer: includer,
-
-	newClss: newClss,
-	newInit: newInit
-};
-
-clss.util = util;
-
-clss.toString = toString;
-
-clss.create = clss.clss = clss;
-
-clss.derived = derived;
+var clss = Clss;
 
 module.exports = clss;
 
-function clss (name, main, supr) {
-	main = main || name;
 
-	if (!util.isFunc(main)) throw new Error('Invalid class: missing function.');
+var util = clss.util = (function () {
+	var toString = Object.prototype.toString;
 
-	if (typeof name !== 'string') {
-		if (name && typeof name.name === 'string') name = name.name;
+	return {
+		isFunction: function (obj) {return toString.call(obj) === '[object Function]';},
+		isArray: Array.isArray || function (obj) {return toString.call(obj) === '[object Array]';},
 
-		else throw new Error('Invalid class: missing name.');
+		newObject: Object.create || function (obj) {X.prototype = obj; return new X(); function X () {}},
 
-	} else name = name.replace(/[^A-Za-z0-9$_\-]/g, '_');
+		namedFunction: namedFunction,
+		createInstance: createInstance,
 
-	var that = util.isFunc(this) ? this : null,
-	    self = util.newClss(name),
-	    initN = 'init' + name,
-	    self_,
-	    suprP,
-	    proto,
-	    include;
+		clssDerived: function (obj, inst) {var name;
+			return obj && (obj.constructor === (inst || clss) ||
+				(inst && inst.prototype[(name = util.initName(inst))] === obj[name]));
+		},
 
-	supr = supr ? supr : (that !== clss ? that : null);
+		initName: function (inst) {return 'init' + (inst.name || inst);},
 
-	if (util.isFunc(supr)) {
-		suprP = supr.prototype;
-		self.supr = supr;
+		newInit: function (suprN) {
+			return suprN ?
+				function () {return this[suprN].apply(this, arguments);} :
+				function () {return this;};
+		},
+
+		assign: function (target, obj) {
+			for (var p in obj) if (p !== 'constructor' && obj.hasOwnProperty(p)) target[p] = obj[p];
+		}
+	};
+})();
+
+var slice = Array.prototype.slice;
+
+
+function Clss (name) {
+	name = name && name.name || name;
+	if (typeof name !== 'string') throw new Error('clss: Invalid class name.');
+
+	name = name.replace(/[^A-Za-z0-9$_]/g, '_');
+
+	var src = 'return this.' + util.initName(name) + '.apply(this, arguments);',
+	    supr = util.isFunction(this) ? this : null,
+	    inst = util.namedFunction(name, src);
+
+	if (!inst.name) inst.name = name;
+
+	return clss.construct(inst, supr, slice.call(arguments));
+}
+
+
+((clss.construct = function (inst, supr, defs) {
+	if (!util.isFunction(inst)) throw new Error('clss.construct: Invalid instace function.');
+
+	var _ = inst._ = function () {return this;},
+	    suprP = supr && supr.prototype,
+	    proto = inst.prototype = _.prototype = suprP ? util.newObject(suprP) : {};
+
+	inst.definitions = [].concat(defs);
+	proto.constructor = inst;
+
+	if (inst !== clss) {
+		inst.constructor = clss;
+		util.createInstance(clss, inst, {});
 	}
 
-	self_ = self._ = function () {return this;};
+	if (supr) {
+		inst.supr = supr;
 
-	proto = self.prototype = self_.prototype = suprP ? util.new_(suprP) : {};
+		if (util.clssDerived(supr)) {
+			util.createInstance(supr, inst, {}, supr.supr && supr.supr.prototype);
+		}
+	}
 
-	proto.constructor = self.self = self;
+	util.createInstance(inst, inst, proto, suprP);
+	return inst;
+})
 
-	if (suprP) proto.supr = suprP;
 
-	self.derived = function (obj) {
-		return obj && proto[initN] && proto[initN] === obj[initN];
+(clss, Function, [function () {
+	this.clss = clss;
+
+	this.derived = function (obj) {
+		return util.clssDerived(obj, this);
+	}
+
+	this.create = function (obj, args) {
+		if (this === clss) return clss.apply(null, arguments);
+
+		if (!obj && this._) obj = new (this._)();
+
+		else {
+			obj = obj || {};
+			util.createInstance(this, {}, obj, this.supr && this.supr.prototype);
+		}
+
+		return args ?
+			obj[util.initName(this)].apply(obj, util.isArray(args) ? args : [args]) :
+			obj;
 	};
 
-	include = function () {
-		util.includer(this.prototype, slice.call(arguments, 0));
 
+	this.include = function () {
+		this.definitions.concat(slice.call(arguments));
 		return this;
 	};
 
-	self.create = function (obj, args_) {
-		if (!self.derived(obj)) {
-			obj = obj || new self._();
 
-			var initP = proto[initN],
-			    args = [obj, proto, name, initN],
-			    init;
+	this.toString = function () {return this.name;};
 
-			if (util.isFunc(supr)) args.splice(1, 0, suprP, supr);
 
-			if (clss.derived(supr) && !supr.derived(obj)) supr.create(obj);
+	this.reconstruct = function () {
+		clss.construct(this, this.name, this.supr, this.definitions);
+		return this;
+	}
+}]));
 
-			if (util.isFunc(main)) {
-				init = obj.init;
 
-				this.include = function () {
-					includer(obj, slice.call(arguments, 0));
+function createInstance (ctor, self, obj, supr) {
+	obj = obj || new (ctor._)();
 
-					return this;
-				};
+	var proto = ctor.prototype,
+	    initN = util.initName(ctor.name),
+	    args = [obj, proto, initN],
+	    defs = ctor.definitions,
+	    init = proto[initN],
+	    i;
 
-				args.splice(args.length - 2, 0, init);
-				main.apply(this, args);
+	if (supr) {
+		args.splice(1, 0, supr);
 
-				this.include = include;
+		if (util.clssDerived(ctor.supr) && !ctor.supr.derived(obj)) ctor.supr.create(obj);
 
-				if (!obj[initN] && obj.init !== init) {
-					obj[initN] = obj.init;
+		else if (!(obj instanceof ctor.supr)) util.assign(obj, supr);
+	}
 
-					if (init === undefined) delete obj.init;
+	if (defs.length) {
+		for (i = 0; i < defs.length; i += 1) {
+			if (util.isFunction(defs[i])) {
+				if (util.clssDerived(defs[i])) {
+					if (!util.clssDerived(obj, defs[i])) defs[i].create(obj);
 
-					else obj.init = init;
-				}
-			}
+				} else defs[i].apply(self, args);
 
-			if (initP) obj[initN] = initP;
-
-			else if (!obj[initN]) {
-				obj[initN] = newInit(supr && 'init' + supr.name);
+			} else if (typeof defs[i] === 'object') {
+				util.assign(obj, defs[i]);
 			}
 		}
 
-		return util.isArray(args_) ? obj[initN].apply(obj, args_) : (
-			args_ === true ? obj[initN].call(obj) : obj);
-	};
+		if (!obj[initN] && obj.init) {
+			obj[initN] = obj.init;
+			delete obj.init;
+		}
+	}
 
-	self.include = include;
+	if (init) obj[initN] = init;
 
-	self.clss = clss;
-
-	self.create(proto);
-
-	return self;
-}
-
-function toString () {
-	return this.name;
-}
-
-function derived (klss) {
-	return util.isFunc(klss) && klss.clss === clss;
-}
-
-function includer (obj, list) {
-	list.forEach(function (clss) {
-		clss.create(obj);
-	});
-}
-
-function newClss (name) {
-	var clss = namedFunc(name,
-		'return this.init' + name + '.apply(this, arguments);');
-
-	if (!clss.name) clss.name = name;
-
-	clss.toString = toString;
-
-	return clss;
-}
-
-function newInit (suprN) {
-	return suprN ?
-		function () {return this[suprN].apply(this, arguments);} :
-		function () {return this;};
+	else if (!obj[initN]) {
+		obj[initN] = util.newInit(util.clssDerived(ctor.supr) && 'init' + ctor.supr.name);
+	}
 }
