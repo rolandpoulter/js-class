@@ -141,7 +141,11 @@ function createInstance (ctor, self, obj, supr) {
 
 		if (util.clssDerived(ctor.supr) && !ctor.supr.derived(obj)) ctor.supr.create(obj);
 
-		else if (!(obj instanceof ctor.supr)) util.assign(obj, supr);
+		else if (!(obj instanceof ctor.supr)) {
+            util.assign(obj, supr);
+            util.assign(ctor, ctor.supr);
+            ctor.definitions = defs;
+		}
 	}
 
 	if (defs.length) {
