@@ -104,8 +104,10 @@ function Clss (name) {
 			util.createInstance(this, {}, obj, this.supr && this.supr.prototype);
 		}
 
-		return args ?
-			obj[util.initName(this)].apply(obj, util.isArray(args) ? args : [args]) :
+		var initN = util.initName(this);
+
+		return args && obj[initN] ?
+			obj[initN].apply(obj, util.isArray(args) ? args : [args]) :
 			obj;
 	};
 

@@ -1,4 +1,4 @@
 {
 	"name": "clss_test",
-	"dependencies": {"spc": "0.0.1"}
+	"dependencies": {"spc": "0.0.2"}
 }
