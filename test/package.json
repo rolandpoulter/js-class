@@ -1,4 +1,6 @@
 {
 	"name": "clss_test",
+	"version": "0.0.0",
+	"private": true,
 	"dependencies": {"spc": "0.0.2"}
 }
