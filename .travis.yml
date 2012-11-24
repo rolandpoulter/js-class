@@ -12,6 +12,7 @@ install:
   - npm install
   - cd ./test
   - npm install
+  - cd ../
 
 script:
   - npm test
