@@ -19,5 +19,7 @@ script:
 
 notifications:
   email:
+    on_failure: 'always'
+    on_success: 'always'
     recipients:
       - "rolandpoulter@gmail.com"
