@@ -1,6 +1,5 @@
 [![Build Status](https://secure.travis-ci.org/rolandpoulter/js-class.png)](http://travis-ci.org/rolandpoulter/js-class)
 
-
 Copyright (C) NaN
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
