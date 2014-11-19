@@ -20,6 +20,8 @@ install:
 script:
   - npm test
 
+build_image: shippable/minv2
+
 notifications:
   email:
     on_failure: 'always'
