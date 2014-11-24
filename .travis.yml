@@ -20,6 +20,9 @@ install:
 script:
   - npm test
 
+after_script:
+  - null
+
 build_image: shippable/minv2
 
 notifications:
