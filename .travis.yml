@@ -25,7 +25,7 @@ script:
 after_script:
   - null
 
-build_image: shippable/minv2
+# build_image: shippable/minv2
 
 notifications:
   email:
