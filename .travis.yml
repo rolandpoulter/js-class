@@ -11,6 +11,8 @@ matrix:
 
 parallelized_test: true
 
+build_image: shippable/minv2
+
 install:
   - npm install
   - cd ./test
@@ -22,8 +24,6 @@ script:
 
 after_script:
   - null
-
-# build_image: shippable/minv2
 
 notifications:
   email:
